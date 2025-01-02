@@ -193,7 +193,6 @@ a--->a2
 a--->a3
 a--->a4
 
-a1-->a11
 a1-->a12
 a1-->a13
 
@@ -210,7 +209,6 @@ a3-->a35
 a4-->a41
 a4-->a42
 a4-->a43
-a4-->a44
 
 a--->c
 
@@ -218,6 +216,7 @@ c-->c1
 c-->c2
 c-->c3
 ```
+### Descrição do Modelo
 1. application/:
 - Contém os serviços de aplicação que orquestram as operações de alto nível.
 - Os DTOs garantem a separação entre as camadas.
@@ -233,8 +232,46 @@ presentation/:
 - Separado por tipo de teste para facilitar a manutenção e a rastreabilidade.
 
 ```mermaid
-architecture-beta
-    group api(logos:npm)[API Uagenda]
+graph TD
+    subgraph "presentation/"
+        A[REST Controllers] -->|Processa entrada| B[Validation Layer]
+    end
+
+    subgraph "application/"
+        C[Application Services]
+        D[DTOs]
+        C -->|Usa| D
+    end
+
+    subgraph "domain/"
+        E[Entities]
+        F[Domain Services]
+        G[Interfaces]
+        F -->|Depende de| E
+        E -->|Define| G
+    end
+
+    subgraph "infrastructure/"
+        H[Repositories]
+        I[External API Integrations]
+        J[Database Implementations]
+        H -->|Implementa| G
+        I -->|Comunica-se com| J
+    end
+
+    subgraph "tests/"
+        K[Unit Tests]
+        L[Integration Tests]
+        M[End-to-End Tests]
+    end
+
+    A --> C --> F
+    F --> H
+    I --> J
+    K -->|Testa| C
+    L -->|Testa| E
+    M -->|Testa| A
+
 
 
 ```
@@ -306,77 +343,6 @@ erDiagram
     GROUPS ||--o{ USERS : "has_members"
 ```
 
-Segue o diagrama de relacionamento em formato **Mermaid**, que pode ser usado diretamente no seu README:
-
-```mermaid
-erDiagram
-    USERS {
-        int id
-        string name
-        string email
-        string password
-        string role
-        datetime created_at
-        datetime updated_at
-    }
-
-    ACTIVITIES {
-        int id
-        string title
-        string description
-        datetime due_date
-        int created_by
-        int assigned_to
-        string status
-        string priority
-    }
-
-    GROUPS {
-        int id
-        string name
-        string description
-        int created_by
-        int[] members
-        datetime created_at
-    }
-
-    NOTIFICATIONS {
-        int id
-        int user_id
-        int activity_id
-        string message
-        boolean read
-        datetime created_at
-    }
-
-    PERFORMANCE_REPORTS {
-        int id
-        int user_id
-        int group_id
-        json report_data
-        int generated_by
-        datetime created_at
-    }
-
-    SETTINGS {
-        int id
-        int user_id
-        string key
-        string value
-        datetime updated_at
-    }
-
-    USERS ||--o{ ACTIVITIES : "creates"
-    USERS ||--o{ NOTIFICATIONS : "receives"
-    USERS ||--o{ PERFORMANCE_REPORTS : "evaluated_in"
-    USERS ||--o{ GROUPS : "belongs_to"
-    ACTIVITIES ||--o{ NOTIFICATIONS : "triggers"
-    GROUPS ||--o{ PERFORMANCE_REPORTS : "related_to"
-    GROUPS ||--o{ USERS : "has_members"
-```
-
----
-
 ### Explicação dos Relacionamentos
 1. **USERS → ACTIVITIES**: Um usuário pode criar várias atividades (`created_by`) e também pode ser designado a elas (`assigned_to`).
 2. **USERS → NOTIFICATIONS**: Um usuário pode receber várias notificações relacionadas às suas atividades.
@@ -386,3 +352,67 @@ erDiagram
 6. **GROUPS → PERFORMANCE_REPORTS**: Relatórios de desempenho podem ser relacionados a grupos específicos.
 7. **GROUPS → USERS**: Cada grupo tem uma lista de membros (usuários). 
 
+Para o banco de dados da sua agenda eletrônica com foco no público escolar, algumas tabelas (ou coleções, caso use um banco NoSQL) necessárias para armazenar os dados seriam:
+
+### Estrutura de Tabelas
+1. **Usuários (`users`)**
+   - `id`: Identificador único.
+   - `name`: Nome completo do usuário.
+   - `email`: Endereço de e-mail.
+   - `password`: Senha criptografada.
+   - `role`: Papel do usuário (e.g., aluno, professor, administrador).
+   - `created_at`: Data de criação.
+   - `updated_at`: Data de atualização.
+
+2. **Atividades (`activities`)**
+   - `id`: Identificador único.
+   - `title`: Título da atividade.
+   - `description`: Descrição da atividade.
+   - `due_date`: Data de vencimento.
+   - `created_by`: Referência ao `id` do usuário que criou.
+   - `assigned_to`: Referência ao `id` do usuário ou grupo designado.
+   - `status`: Status da atividade (e.g., pendente, concluída).
+   - `priority`: Nível de prioridade.
+
+3. **Grupos ou Turmas (`groups`)**
+   - `id`: Identificador único.
+   - `name`: Nome do grupo/turma.
+   - `description`: Descrição (opcional).
+   - `created_by`: Referência ao `id` do usuário que criou.
+   - `members`: Lista de `id`s de usuários pertencentes ao grupo.
+   - `created_at`: Data de criação.
+
+4. **Notificações (`notifications`)**
+   - `id`: Identificador único.
+   - `user_id`: Referência ao `id` do usuário a quem a notificação pertence.
+   - `activity_id`: Referência ao `id` da atividade relacionada (opcional).
+   - `message`: Mensagem da notificação.
+   - `read`: Booleano indicando se a notificação foi lida.
+   - `created_at`: Data de criação.
+
+5. **Relatórios de Desempenho (`performance_reports`)**
+   - `id`: Identificador único.
+   - `user_id`: Referência ao `id` do usuário avaliado.
+   - `group_id`: Referência ao `id` do grupo/turma (opcional).
+   - `report_data`: Dados do relatório (em JSON, por exemplo).
+   - `generated_by`: Referência ao `id` do usuário que gerou o relatório.
+   - `created_at`: Data de criação.
+
+6. **Configurações do Sistema (`settings`)**
+   - `id`: Identificador único.
+   - `user_id`: Referência ao `id` do usuário (opcional, caso seja uma configuração global ou por usuário).
+   - `key`: Nome da configuração.
+   - `value`: Valor da configuração.
+   - `updated_at`: Data da última atualização.
+
+---
+
+### Relacionamentos
+- **Usuários ↔ Atividades:**  
+  - Um usuário pode criar ou ser designado a várias atividades.
+- **Grupos ↔ Usuários:**  
+  - Um grupo pode ter vários usuários e um usuário pode pertencer a vários grupos.
+- **Atividades ↔ Notificações:**  
+  - Uma atividade pode gerar várias notificações relacionadas.
+
+Essa estrutura é modular e escalável, permitindo fácil adaptação conforme novos requisitos surgirem. Se precisar de mais detalhes ou alguma sugestão específica, posso aprofundar!
