@@ -24,7 +24,7 @@ Desenvolvida pela Uclass, a UAgenda é uma ferramenta pensada em solucionar o pr
  ### Mobile
  - flutter;
  ### BackEnd
- - Node.js
+ - Node.tsc
  ### Banco de Dados
  - Postgresql;
 
@@ -414,5 +414,3 @@ Para o banco de dados da sua agenda eletrônica com foco no público escolar, al
   - Um grupo pode ter vários usuários e um usuário pode pertencer a vários grupos.
 - **Atividades ↔ Notificações:**  
   - Uma atividade pode gerar várias notificações relacionadas.
-
-Essa estrutura é modular e escalável, permitindo fácil adaptação conforme novos requisitos surgirem. Se precisar de mais detalhes ou alguma sugestão específica, posso aprofundar!
